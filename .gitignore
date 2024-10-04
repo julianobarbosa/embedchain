@@ -179,3 +179,4 @@ chat_with_file.py
 chat_with_dir.py
 chat-with-database.py
 chat-ensemble-database.py
+.aider*
