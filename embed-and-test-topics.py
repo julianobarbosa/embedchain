@@ -143,28 +143,52 @@ def read_files_from_directory(directory):
         for filename in files:
             filepath = os.path.join(root, filename)
             if filename.endswith(".txt"):
-                with open(filepath, 'r') as file:
-                    text_content = file.read()
-                    metadata = {"source": filepath, "document_id": f"doc_{len(file_data)}", "file_name": filename}
-                    file_data.append({"text": text_content, "metadata": metadata})
-            elif filename.endswith(".md"):
-                with open(filepath, 'r') as file:
-                    md_content = file.read()
-                    html_content = markdown.markdown(md_content)
-                    metadata = {"source": filepath, "document_id": f"doc_{len(file_data)}", "file_name": filename}
-                    file_data.append({"text": html_content, "metadata": metadata})
-            elif filename.endswith(".pdf"):
-                with open(filepath, 'rb') as file:
-                    reader = PyPDF2.PdfReader(file)
-                    pdf_text = ''
+                if os.path.exists(filepath):
                     try:
-                        for page in range(len(reader.pages)):
-                            pdf_text += reader.pages[page].extract_text()
-                    except IndexError:
-                        print(Fore.RED + f"Error reading pages from {filepath}. Skipping this file." + Style.RESET_ALL)
+                        with open(filepath, 'r') as file:
+                            text_content = file.read()
+                            metadata = {"source": filepath, "document_id": f"doc_{len(file_data)}", "file_name": filename}
+                            file_data.append({"text": text_content, "metadata": metadata})
+                    except FileNotFoundError:
+                        print(Fore.RED + f"Error accessing file {filepath}. Skipping this file." + Style.RESETALL)
                         continue
-                    metadata = {"source": filepath, "document_id": f"doc_{len(file_data)}", "file_name": filename}
-                    file_data.append({"text": pdf_text, "metadata": metadata})
+                else:
+                    print(Fore.RED + f"File {filepath} does not exist. Skipping this file." + Style.RESET_ALL)
+                    continue
+            elif filename.endswith(".md"):
+                if os.path.exists(filepath):
+                    try:
+                        with open(filepath, 'r') as file:
+                            md_content = file.read()
+                            html_content = markdown.markdown(md_content)
+                            metadata = {"source": filepath, "document_id": f"doc_{len(file_data)}", "file_name": filename}
+                            file_data.append({"text": html_content, "metadata": metadata})
+                    except FileNotFoundError:
+                        print(Fore.RED + f"Error accessing file {filepath}. Skipping this file." + Style.RESETALL)
+                        continue
+                else:
+                    print(Fore.RED + f"File {filepath} does not exist. Skipping this file." + Style.RESET_ALL)
+                    continue
+            elif filename.endswith(".pdf"):
+                if os.path.exists(filepath):
+                    try:
+                        with open(filepath, 'rb') as file:
+                            reader = PyPDF2.PdfReader(file)
+                            pdf_text = ''
+                            try:
+                                for page in range(len(reader.pages)):
+                                    pdf_text += reader.pages[page].extract_text()
+                            except IndexError:
+                                print(Fore.RED + f"Error reading pages from {filepath}. Skipping this file." + Style.RESET_ALL)
+                                continue
+                            metadata = {"source": filepath, "document_id": f"doc_{len(file_data)}", "file_name": filename}
+                            file_data.append({"text": pdf_text, "metadata": metadata})
+                    except FileNotFoundError:
+                        print(Fore.RED + f"Error accessing file {filepath}. Skipping this file." + Style.RESETALL)
+                        continue
+                else:
+                    print(Fore.RED + f"File {filepath} does not exist. Skipping this file." + Style.RESET_ALL)
+                    continue
     return file_data
 
 # Read text data from directory
