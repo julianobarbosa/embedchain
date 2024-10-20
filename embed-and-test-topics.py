@@ -158,8 +158,7 @@ def read_files_from_directory(directory):
                     reader = PyPDF2.PdfReader(file)
                     pdf_text = ''
                     for page in range(len(reader.pages)):
-                        if page < len(reader.pages):
-                            pdf_text += reader.pages[page].extract_text()
+                        pdf_text += reader.pages[page].extract_text()
                     metadata = {"source": filepath, "document_id": f"doc_{len(file_data)}", "file_name": filename}
                     file_data.append({"text": pdf_text, "metadata": metadata})
     return file_data
