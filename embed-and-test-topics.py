@@ -157,8 +157,12 @@ def read_files_from_directory(directory):
                 with open(filepath, 'rb') as file:
                     reader = PyPDF2.PdfReader(file)
                     pdf_text = ''
-                    for page in range(len(reader.pages)):
-                        pdf_text += reader.pages[page].extract_text()
+                    try:
+                        for page in range(len(reader.pages)):
+                            pdf_text += reader.pages[page].extract_text()
+                    except IndexError:
+                        print(Fore.RED + f"Error reading pages from {filepath}. Skipping this file." + Style.RESET_ALL)
+                        continue
                     metadata = {"source": filepath, "document_id": f"doc_{len(file_data)}", "file_name": filename}
                     file_data.append({"text": pdf_text, "metadata": metadata})
     return file_data
