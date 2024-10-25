@@ -1,24 +1,36 @@
-import os
 import json
+import os
 import shutil
 import sys
+
 import markdown
 import PyPDF2
-from embedchain import App
-from tqdm import tqdm
 from colorama import Fore, Style
+from tqdm import tqdm
+
+from embedchain import App
+
 
 # Function to prompt user for input with a default value
 def prompt_with_default(prompt, default):
     user_input = input(f"{prompt} (default: {default}): ")
     return user_input.strip() or default
 
+
 # Function to list existing databases
 def list_existing_databases(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
-        print(Fore.YELLOW + f"Directory '{directory}' created as it did not exist." + Style.RESET_ALL)
-    databases = [name for name in os.listdir(directory) if os.path.isdir(os.path.join(directory, name))]
+        print(
+            Fore.YELLOW
+            + f"Directory '{directory}' created as it did not exist."
+            + Style.RESET_ALL
+        )
+    databases = [
+        name
+        for name in os.listdir(directory)
+        if os.path.isdir(os.path.join(directory, name))
+    ]
     if databases:
         print(Fore.CYAN + "Existing databases:" + Style.RESET_ALL)
         for db in databases:
@@ -26,17 +38,23 @@ def list_existing_databases(directory):
     else:
         print(Fore.YELLOW + "No existing databases found." + Style.RESET_ALL)
 
+
 # Function to save database creation names in a JSON file
 def save_database_names(database_names):
     with open("database_names.json", "w") as f:
         json.dump(database_names, f)
 
+
 # Function to validate collection name
 def valid_collection_name(name):
     import re
-    if 3 <= len(name) <= 63 and re.match("^[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?$", name):
+
+    if 3 <= len(name) <= 63 and re.match(
+        "^[a-zA-Z0-9]([a-zA-Z0-9_-]*[a-zA-Z0-9])?$", name
+    ):
         return True
     return False
+
 
 # Load existing database names from JSON file
 if os.path.exists("database_names.json"):
@@ -50,19 +68,29 @@ database_name = prompt_with_default("Enter database name", "default_database")
 
 # Check if database name already exists
 if database_name in existing_database_names:
-    print(Fore.RED + "Database name already exists. Please choose a different name." + Style.RESET_ALL)
+    print(
+        Fore.RED
+        + "Database name already exists. Please choose a different name."
+        + Style.RESET_ALL
+    )
     sys.exit(1)
 
 # Prompt user for collection name and ensure it meets the criteria
 collection_name = prompt_with_default("Enter collection name", "default_collection")
 
 while not valid_collection_name(collection_name):
-    print(Fore.RED + "Invalid collection name. Please choose a valid name (3-63 characters, alphanumeric, underscores, hyphens, no consecutive periods)." + Style.RESET_ALL)
+    print(
+        Fore.RED
+        + "Invalid collection name. Please choose a valid name (3-63 characters, alphanumeric, underscores, hyphens, no consecutive periods)."
+        + Style.RESET_ALL
+    )
     collection_name = prompt_with_default("Enter collection name", "default_collection")
 
 # Prompt user for chunking strategy
 print(Fore.MAGENTA + "Determine chunking strategy:" + Style.RESET_ALL)
-is_text = input("Is the data type text? [yes/no] (default: yes): ").strip().lower() or "yes"
+is_text = (
+    input("Is the data type text? [yes/no] (default: yes): ").strip().lower() or "yes"
+)
 is_text = is_text == "yes"
 
 if is_text:
@@ -71,18 +99,35 @@ if is_text:
     chunk_overlap = 50
     min_chunk_size = 200
 else:
-    fine_grained_analysis = input("Are the analysis objectives fine-grained? (yes/no): ").strip().lower() == "yes"
-    high_detail_needed = input("Is high detail needed for analysis? (yes/no): ").strip().lower() == "yes"
-    limited_resources = input("Are computational resources limited? (yes/no): ").strip().lower() == "yes"
-    domain_specific = input("Are there any domain-specific considerations? (yes/no): ").strip().lower() == "yes"
+    fine_grained_analysis = (
+        input("Are the analysis objectives fine-grained? (yes/no): ").strip().lower()
+        == "yes"
+    )
+    high_detail_needed = (
+        input("Is high detail needed for analysis? (yes/no): ").strip().lower() == "yes"
+    )
+    limited_resources = (
+        input("Are computational resources limited? (yes/no): ").strip().lower()
+        == "yes"
+    )
+    domain_specific = (
+        input("Are there any domain-specific considerations? (yes/no): ")
+        .strip()
+        .lower()
+        == "yes"
+    )
 
     if fine_grained_analysis or high_detail_needed:
-        strategy_message = "Use smaller chunk sizes with more overlap to capture semantic meaning."
+        strategy_message = (
+            "Use smaller chunk sizes with more overlap to capture semantic meaning."
+        )
         chunk_size = 200
         chunk_overlap = 100
         min_chunk_size = 100
     else:
-        strategy_message = "Use larger chunk sizes with less overlap for broader analysis."
+        strategy_message = (
+            "Use larger chunk sizes with less overlap for broader analysis."
+        )
         chunk_size = 400
         chunk_overlap = 50
         min_chunk_size = 200
@@ -112,15 +157,15 @@ config = {
         "config": {
             "collection_name": collection_name,  # Ensure this is a valid collection name
             "dir": "databases",  # Ensure this directory exists
-            "allow_reset": True
-        }
+            "allow_reset": True,
+        },
     },
     "chunker": {
         "chunk_size": chunk_size,
         "chunk_overlap": chunk_overlap,
         "length_function": "len",
-        "min_chunk_size": min_chunk_size
-    }
+        "min_chunk_size": min_chunk_size,
+    },
 }
 
 # Initialize EmbedChain app
@@ -134,7 +179,10 @@ existing_database_names.append(database_name)
 save_database_names(existing_database_names)
 
 # Path to the directory containing various file types
-directory_path = input("Please enter the full path to the directory containing files to embed: ")
+directory_path = input(
+    "Please enter the full path to the directory containing files to embed: "
+)
+
 
 # Function to read text from various file types, including subdirectories
 def read_files_from_directory(directory):
@@ -189,7 +237,39 @@ def read_files_from_directory(directory):
                 else:
                     print(Fore.RED + f"File {filepath} does not exist. Skipping this file." + Style.RESET_ALL)
                     continue
+                with open(filepath, "r") as file:
+                    text_content = file.read()
+                    metadata = {
+                        "source": filepath,
+                        "document_id": f"doc_{len(file_data)}",
+                        "file_name": filename,
+                    }
+                    file_data.append({"text": text_content, "metadata": metadata})
+            elif filename.endswith(".md"):
+                with open(filepath, "r") as file:
+                    md_content = file.read()
+                    html_content = markdown.markdown(md_content)
+                    metadata = {
+                        "source": filepath,
+                        "document_id": f"doc_{len(file_data)}",
+                        "file_name": filename,
+                    }
+                    file_data.append({"text": html_content, "metadata": metadata})
+            elif filename.endswith(".pdf"):
+                with open(filepath, "rb") as file:
+                    reader = PyPDF2.PdfReader(file)
+                    pdf_text = ""
+                    for page in range(len(reader.pages)):
+                        pdf_text += reader.pages[page].extract_text()
+                    metadata = {
+                        "source": filepath,
+                        "document_id": f"doc_{len(file_data)}",
+                        "file_name": filename,
+                    }
+                    file_data.append({"text": pdf_text, "metadata": metadata})
+>>>>>>> Stashed changes
     return file_data
+
 
 # Read text data from directory
 file_data = read_files_from_directory(directory_path)
@@ -201,14 +281,26 @@ for idx, data in enumerate(tqdm(file_data, desc="Embedding Documents")):
         # Check if document with the same metadata already exists
         if not app.exists(data["metadata"]["document_id"]):
             app.add(data["text"], metadata=data["metadata"])
-            print(Fore.GREEN + f"Added document {data['metadata']['document_id']} to collection with source {data['metadata']['source']}." + Style.RESET_ALL)
+            print(
+                Fore.GREEN
+                + f"Added document {data['metadata']['document_id']} to collection with source {data['metadata']['source']}."
+                + Style.RESET_ALL
+            )
         else:
-            print(Fore.YELLOW + f"Document {data['metadata']['document_id']} already exists in collection. Skipping insertion." + Style.RESET_ALL)
+            print(
+                Fore.YELLOW
+                + f"Document {data['metadata']['document_id']} already exists in collection. Skipping insertion."
+                + Style.RESET_ALL
+            )
         sys.stdout.flush()
     except AttributeError as e:
         # Database does not exist, proceed with insertion without checking for existence
         app.add(data["text"], metadata=data["metadata"])
-        print(Fore.GREEN + f"Added document {data['metadata']['document_id']} to collection with source {data['metadata']['source']}." + Style.RESET_ALL)
+        print(
+            Fore.GREEN
+            + f"Added document {data['metadata']['document_id']} to collection with source {data['metadata']['source']}."
+            + Style.RESET_ALL
+        )
         sys.stdout.flush()
 
 # Prompt user to enter the topic area
@@ -229,7 +321,7 @@ queries = [
 
         Focus your analysis solely on the content embedded within the EmbedChain database, without referring to any external sources. If the data does not exist, say that you don't have the information.
         """,
-        "name": "top_topics"
+        "name": "top_topics",
     }
 ]
 
@@ -286,14 +378,18 @@ report_path = os.path.join(output_directory, "topic_analysis_report.md")
 try:
     with open(report_path, "w") as report_file:
         report_file.write(report_content)
-    print(Fore.CYAN + f"Report with statistics table has been saved to {report_path}" + Style.RESET_ALL)
+    print(
+        Fore.CYAN
+        + f"Report with statistics table has been saved to {report_path}"
+        + Style.RESET_ALL
+    )
 except Exception as e:
     print(Fore.RED + "Error writing report:" + Style.RESET_ALL, e)
 
 # Continual chat loop
 while True:
     user_query = input("Enter your query (or type 'exit' to end): ")
-    if user_query.lower() == 'exit':
+    if user_query.lower() == "exit":
         break
 
     chat_history.append({"role": "user", "content": user_query})
